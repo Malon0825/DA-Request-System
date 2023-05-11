@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Request System DA</string>
+    <string-array name="spinner_items">
+        <item>none</item>
+        <item>1/4</item>
+        <item>1/2</item>
+        <item>3/4</item>
+    </string-array>
+</resources>
