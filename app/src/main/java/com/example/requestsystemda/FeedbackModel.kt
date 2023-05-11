@@ -5,5 +5,5 @@ data class FeedbackModel (
     var detail_req: String? = null,
     var quantity: String? = null,
     var message: String? = null,
-    var is_read: Boolean? = null,
+    var granted: Boolean? = null,
 )

@@ -53,6 +53,31 @@ class AdminProduct : AppCompatActivity() {
         listView.adapter = adapter
 
 
+        val refresh = findViewById<Button>(R.id.btnRefresh)
+        refresh.setOnClickListener{
+            db.collection("products")
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        adapter.clear() // clear the adapter before adding new data
+                        for (document in task.result!!) {
+                            val data = document.toObject(ProductModel::class.java)
+
+                            val name = data.name
+                            val ratio = data.npk_ratio
+                            val type = data.type
+                            val stocks = data.stocks
+
+                            adapter.add("Name: $name \nN-P-K Ratio: $ratio \nType: $type \nStocks: $stocks")
+                        }
+                        adapter.notifyDataSetChanged() // notify the adapter that the data has changed
+                    } else {
+                        Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
+                    }
+                }
+        }
+
+
         val addProduct = findViewById<Button>(R.id.btnAdd)
         addProduct.setOnClickListener{
 
@@ -74,6 +99,7 @@ class AdminProduct : AppCompatActivity() {
             back.setOnClickListener{
                 myDialog.dismiss()
             }
+
 
             val add = dialogBinding.findViewById<Button>(R.id.btnAdd)
             add.setOnClickListener{
@@ -149,6 +175,7 @@ class AdminProduct : AppCompatActivity() {
 
 
         }
+
 
         val editProduct = findViewById<Button>(R.id.btnEdit)
         editProduct.setOnClickListener{

@@ -1,11 +1,13 @@
 package com.example.requestsystemda
 
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.Toast
+import android.view.Gravity
+import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -36,6 +38,12 @@ class MainActivity : AppCompatActivity() {
         var lastName: String? = null
         var address: String? = null
         var access: Boolean? = null
+        var granted: Boolean? = null
+
+        val adapter: ArrayAdapter<String> = ArrayAdapter(
+            this,
+            R.layout.custom_list_layout
+        )
 
         db.collection("request")
             .document(uid)
@@ -107,7 +115,80 @@ class MainActivity : AppCompatActivity() {
                     }
             }
 
+        }
+
+        val btnMessage = findViewById<ImageButton>(R.id.btnMessage)
+        btnMessage.setOnClickListener{
+
+            val dialogBinding = layoutInflater.inflate(R.layout.message_screen, null)
+
+            val myDialog = Dialog(this)
+            myDialog.setContentView(dialogBinding)
+
+            val window = myDialog.window
+            window?.setGravity(Gravity.CENTER)
+            window?.setDimAmount(0.5F) // Set dim amount to 0 for full transparency
+
+            myDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            myDialog.setCanceledOnTouchOutside(true)
+            myDialog.show()
+
+            val listview = dialogBinding.findViewById<ListView>(R.id.lvMessage)
+
+            db.collection("messages")
+                .whereEqualTo("user_id", uid)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        for (document in task.result!!) {
+                            val data = document.toObject(MessageModel::class.java)
+                            val message = data.message
+
+                            adapter.add(
+                                "$message"
+                            )
+                        }
+                    }
+                }
+
+            db.collection("feedbacks")
+                .whereEqualTo("client_id", uid)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        for (document in task.result!!) {
+                            val data = document.toObject(FeedbackModel::class.java)
+
+                            val req_id = data.client_id
+                            val req_detail = data.detail_req
+                            val req_quantity = data.quantity
+                            val feedback_message = data.message
+                            granted = data.granted
+
+                            // Set the text color based on the value of granted
+                            if (granted == true) {
+                                adapter.add(
+                                    "Your request is being processed, please refer to the message below. \n\n$req_detail \n\nFertilizer granted: $req_quantity sacks \n" +
+                                            "\nMessage from DA:\n$feedback_message"
+                                )
+                            } else {
+                                adapter.add(
+                                    "$feedback_message \n\n$req_detail"
+                                )
+
+                            }
+
+                        }
+                    } else {
+                        Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
+                    }
+                }
+
+
+            listview.adapter = adapter
 
         }
     }
+
 }
+

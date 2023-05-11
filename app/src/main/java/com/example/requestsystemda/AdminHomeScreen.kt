@@ -22,7 +22,9 @@ class AdminHomeScreen : AppCompatActivity() {
 
         listView = findViewById(R.id.listView1)
         val docIDs: MutableList<String> = mutableListOf()
+        val clientReq: MutableList<String> = mutableListOf()
         val userReqOrderId: MutableList<String> = mutableListOf()
+        val userReqDetails: MutableList<String> = mutableListOf()
         var isGrantAccess: Boolean? = null
 
 
@@ -89,9 +91,8 @@ class AdminHomeScreen : AppCompatActivity() {
                 accept.setOnClickListener {
 
                     val clientId = userReqOrderId[reqID.toInt()]
-
-                    val displayReqId = docIDs[reqID.toInt()]
-                    val detailVal = details.text.toString()
+                    val displayReqId = clientReq[reqID.toInt()]
+                    val detailVal = userReqDetails[reqID.toInt()]
 
                     val txtQuantity = dialogBinding.findViewById<EditText>(R.id.txtStocks)
                     val quantity = txtQuantity.text.toString()
@@ -99,13 +100,14 @@ class AdminHomeScreen : AppCompatActivity() {
                     val txtMessage = dialogBinding.findViewById<EditText>(R.id.txtMessage)
                     val message = txtMessage.text.toString()
 
-                    val isRead = false
+                    val granted = true
 
-                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, isRead)
+                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted)
 
                     db.collection("feedbacks")
                         .add(feedbackData)
                         .addOnSuccessListener { documentReference ->
+
                             db.collection("client_request")
                                 .document(displayReqId)
                                 .delete()
@@ -126,6 +128,9 @@ class AdminHomeScreen : AppCompatActivity() {
 
                                                     val reqOrderId = data.client_id
                                                     userReqOrderId.add(reqOrderId.toString())
+
+                                                    val reqDetail = data.request_deteail
+                                                    userReqDetails.add(reqDetail.toString())
 
                                                     val cDetail = data.client_deteail
                                                     val cAddress = data.client_address
@@ -157,14 +162,15 @@ class AdminHomeScreen : AppCompatActivity() {
                 decline.setOnClickListener {
                     val clientId = userReqOrderId[reqID.toInt()]
 
-                    val displayReqId = docIDs[reqID.toInt()]
-                    val detailVal = details.text.toString()
+                    val displayReqId = clientReq[reqID.toInt()]
+
+                    val detailVal = userReqDetails[reqID.toInt()]
 
                     val quantity = ""
                     val message = "Your request has been declined..!"
-                    val isRead = false
+                    val granted = false
 
-                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, isRead)
+                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted)
 
                     db.collection("feedbacks")
                         .add(feedbackData)
@@ -175,10 +181,7 @@ class AdminHomeScreen : AppCompatActivity() {
                                 .delete()
                                 .addOnSuccessListener {
                                     Toast.makeText(
-                                        this,
-                                        "You have declined the request. The request will be deleted.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                        this, "You have declined the request. The request will be deleted.", Toast.LENGTH_LONG  ).show()
 
                                     // Refresh adapter and dismiss dialog here
                                     db.collection("client_request")
@@ -190,11 +193,13 @@ class AdminHomeScreen : AppCompatActivity() {
                                                     val docID = document.id
                                                     docIDs.add(docID)
 
-                                                    val data =
-                                                        document.toObject(ProductRequestedModel::class.java)
+                                                    val data = document.toObject(ProductRequestedModel::class.java)
 
                                                     val reqOrderId = data.client_id
                                                     userReqOrderId.add(reqOrderId.toString())
+
+                                                    val reqDetail = data.request_deteail
+                                                    userReqDetails.add(reqDetail.toString())
 
                                                     val cDetail = data.client_deteail
                                                     val cAddress = data.client_address
@@ -245,46 +250,115 @@ class AdminHomeScreen : AppCompatActivity() {
 
                     db.collection("request")
                         .document(id)
-                        .update("access", true)
-                        .addOnSuccessListener {
-                            db.collection("request")
-                                .whereEqualTo("access", false)
-                                .get()
-                                .addOnCompleteListener { task ->
-                                    if (task.isSuccessful) {
-                                        adapter.clear() // clear the adapter before adding new data
-                                        for (document in task.result!!) {
-                                            val docID = document.id
-                                            docIDs.add(docID)
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                // Create a new message in the messages collection
+                                val messageData = hashMapOf(
+                                    "user_id" to id,
+                                    "message" to "Your request access has been granted"
+                                )
+                                db.collection("messages")
+                                    .add(messageData)
+                                    .addOnSuccessListener {
+                                        // Update the user's access to true
+                                        db.collection("request")
+                                            .document(id)
+                                            .update("access", true)
+                                            .addOnSuccessListener {
+                                                db.collection("request")
+                                                    .whereEqualTo("access", false)
+                                                    .get()
+                                                    .addOnCompleteListener { task ->
+                                                        if (task.isSuccessful) {
+                                                            adapter.clear() // clear the adapter before adding new data
+                                                            for (document in task.result!!) {
+                                                                val docID = document.id
+                                                                docIDs.add(docID)
 
-                                            val data = document.toObject(RequestModel::class.java)
+                                                                val data = document.toObject(RequestModel::class.java)
 
-                                            val fname = data.first_name
-                                            val mname = data.middle_name
-                                            val lname = data.last_name
-                                            val address = data.address
-                                            val date = data.date
+                                                                val fname = data.first_name
+                                                                val mname = data.middle_name
+                                                                val lname = data.last_name
+                                                                val address = data.address
+                                                                val date = data.date
 
-                                            adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
-                                        }
-                                        adapter.notifyDataSetChanged() // notify the adapter that the data has changed
-                                    } else {
-                                        Toast.makeText(
-                                            this,
-                                            "Error getting documents: ${task.exception}",
-                                            Toast.LENGTH_LONG
-                                        ).show()
+                                                                adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
+                                                            }
+                                                            adapter.notifyDataSetChanged() // notify the adapter that the data has changed
+                                                        } else {
+                                                            Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
+                                                Toast.makeText(this, "Access granted..!", Toast.LENGTH_LONG).show()
+                                                myDialog.dismiss()
+                                            }
                                     }
-                                }
-                            Toast.makeText(this, "Access granted..!", Toast.LENGTH_LONG).show()
-                            myDialog.dismiss()
+                            } else {
+                                Toast.makeText(this, "Error getting document", Toast.LENGTH_LONG).show()
+                            }
                         }
+
 
                 }
 
                 val no = dialogBinding.findViewById<Button>(R.id.btnNo)
                 no.setOnClickListener {
-                    myDialog.dismiss()
+                    val selectedID = parent.getItemIdAtPosition(position).toInt()
+                    val id = docIDs[selectedID]
+                    db.collection("request")
+                        .document(id)
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                // Create a new message in the messages collection
+                                val messageData = hashMapOf(
+                                    "user_id" to id,
+                                    "message" to "Your request access has been declined! Please refer to the DA Surallah for further details"
+                                )
+                                db.collection("messages")
+                                    .add(messageData)
+                                    .addOnSuccessListener {
+                                        // Delete the request document
+                                        db.collection("request")
+                                            .document(id)
+                                            .delete()
+                                            .addOnSuccessListener {
+                                                // Refresh the adapter
+                                                db.collection("request")
+                                                    .whereEqualTo("access", false)
+                                                    .get()
+                                                    .addOnCompleteListener { task ->
+                                                        if (task.isSuccessful) {
+                                                            adapter.clear() // clear the adapter before adding new data
+                                                            for (document in task.result!!) {
+                                                                val docID = document.id
+                                                                docIDs.add(docID)
+
+                                                                val data = document.toObject(RequestModel::class.java)
+
+                                                                val fname = data.first_name
+                                                                val mname = data.middle_name
+                                                                val lname = data.last_name
+                                                                val address = data.address
+                                                                val date = data.date
+
+                                                                adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
+                                                            }
+                                                            adapter.notifyDataSetChanged() // notify the adapter that the data has changed
+                                                        } else {
+                                                            Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
+                                                Toast.makeText(this, "Access declined..!", Toast.LENGTH_LONG).show()
+                                                myDialog.dismiss()
+                                            }
+                                    }
+                            } else {
+                                Toast.makeText(this, "Error getting document", Toast.LENGTH_LONG).show()
+                            }
+                        }
                 }
             }
         }
@@ -311,12 +385,15 @@ class AdminHomeScreen : AppCompatActivity() {
                     if (task.isSuccessful) {
                         for (document in task.result!!) {
                             val docID = document.id
-                            docIDs.add(docID)
+                            clientReq.add(docID)
 
                             val data = document.toObject(ProductRequestedModel::class.java)
 
                             val reqOrderId = data.client_id
                             userReqOrderId.add(reqOrderId.toString())
+
+                            val reqDetail = data.request_deteail
+                            userReqDetails.add(reqDetail.toString())
 
                             val cDetail = data.client_deteail
                             val cAddress = data.client_address
