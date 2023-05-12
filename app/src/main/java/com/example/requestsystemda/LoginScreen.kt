@@ -38,10 +38,12 @@ class LoginScreen : AppCompatActivity() {
             if (isPasswordVisible) {
                 // Show password
                 passwordv.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                passwordv.setSelection(passwordv.text.length)
                 showPasswordButton.setBackgroundResource(R.drawable.show)
             } else {
                 // Hide password
                 passwordv.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                passwordv.setSelection(passwordv.text.length)
                 showPasswordButton.setBackgroundResource(R.drawable.hide)
             }
         }

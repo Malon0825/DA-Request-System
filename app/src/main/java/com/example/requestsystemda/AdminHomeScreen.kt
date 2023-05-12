@@ -116,86 +116,92 @@ class AdminHomeScreen : AppCompatActivity() {
 
                     val granted = true
 
-                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted, req_date)
+                    if (quantity.isNotEmpty() && message.isNotEmpty()) {
+                        val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted, req_date)
 
-                    db.collection("feedbacks")
-                        .add(feedbackData)
-                        .addOnSuccessListener { documentReference ->
-                            db.collection("request_history")
-                                .add(feedbackData)
-                                .addOnSuccessListener { documentReference ->
-                                    // Feedback data added to request_history collection
-                                }
-                                .addOnFailureListener { e ->
-                                    // There was an error adding the data to request_history collection
-                                    Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
+                        db.collection("feedbacks")
+                            .add(feedbackData)
+                            .addOnSuccessListener { documentReference ->
+                                db.collection("request_history")
+                                    .add(feedbackData)
+                                    .addOnSuccessListener { documentReference ->
+                                        // Feedback data added to request_history collection
+                                    }
+                                    .addOnFailureListener { e ->
+                                        // There was an error adding the data to request_history collection
+                                        Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
 
-                            db.collection("client_request")
-                                .document(displayReqId)
-                                .delete()
-                                .addOnSuccessListener {
-                                    Toast.makeText(this, "Feedback sent..!", Toast.LENGTH_LONG).show()
+                                db.collection("client_request")
+                                    .document(displayReqId)
+                                    .delete()
+                                    .addOnSuccessListener {
+                                        Toast.makeText(this, "Feedback sent..!", Toast.LENGTH_LONG).show()
 
-                                    // Refresh adapter and dismiss dialog here
-                                    db.collection("client_request")
-                                        .get()
-                                        .addOnCompleteListener { task ->
-                                            adapter.clear()
-                                            if (task.isSuccessful) {
-                                                textNotif.setText("")
-                                                clientReq.clear()
-                                                userReqOrderId.clear()
-                                                userReqDetails.clear()
-                                                userReqDate.clear()
+                                        // Refresh adapter and dismiss dialog here
+                                        db.collection("client_request")
+                                            .get()
+                                            .addOnCompleteListener { task ->
+                                                adapter.clear()
+                                                if (task.isSuccessful) {
+                                                    textNotif.setText("")
+                                                    clientReq.clear()
+                                                    userReqOrderId.clear()
+                                                    userReqDetails.clear()
+                                                    userReqDate.clear()
 
-                                                for (document in task.result!!) {
-                                                    val docID = document.id
-                                                    clientReq.add(docID)
+                                                    for (document in task.result!!) {
+                                                        val docID = document.id
+                                                        clientReq.add(docID)
 
-                                                    val data = document.toObject(ProductRequestedModel::class.java)
+                                                        val data = document.toObject(ProductRequestedModel::class.java)
 
-                                                    val reqOrderId = data.client_id
-                                                    userReqOrderId.add(reqOrderId.toString())
+                                                        val reqOrderId = data.client_id
+                                                        userReqOrderId.add(reqOrderId.toString())
 
-                                                    val reqDetail = data.request_deteail
-                                                    userReqDetails.add(reqDetail.toString())
+                                                        val reqDetail = data.request_deteail
+                                                        userReqDetails.add(reqDetail.toString())
 
-                                                    val cDetail = data.client_deteail
-                                                    val cAddress = data.client_address
+                                                        val cDetail = data.client_deteail
+                                                        val cAddress = data.client_address
 
-                                                    val cDate = data.client_date
-                                                    userReqDate.add(cDate.toString())
+                                                        val cDate = data.client_date
+                                                        userReqDate.add(cDate.toString())
 
-                                                    val cReqDetail = data.request_deteail
-                                                    val cReqArea = data.request_area
+                                                        val cReqDetail = data.request_deteail
+                                                        val cReqArea = data.request_area
 
-                                                    adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
+                                                        adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
 
+                                                    }
+                                                    if (task.result!!.isEmpty) {
+                                                        textNotif.setText("Fertilizer Request is Empty!!")
+                                                    }
+                                                    adapter.notifyDataSetChanged()
+                                                } else {
+                                                    Toast.makeText(
+                                                        this,
+                                                        "Error getting documents: ${task.exception}",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
                                                 }
-                                                if (task.result!!.isEmpty) {
-                                                    textNotif.setText("Fertilizer Request is Empty!!")
-                                                }
-                                                adapter.notifyDataSetChanged()
-                                            } else {
-                                                Toast.makeText(
-                                                    this,
-                                                    "Error getting documents: ${task.exception}",
-                                                    Toast.LENGTH_LONG
-                                                ).show()
                                             }
-                                        }
-                                    myDialog.dismiss()
-                                }
-                                .addOnFailureListener { e ->
-                                    // There was an error adding the data
-                                    Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                        .addOnFailureListener { e ->
-                            // There was an error adding the data to feedbacks collection
-                            Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
+                                        myDialog.dismiss()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        // There was an error adding the data
+                                        Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                // There was an error adding the data to feedbacks collection
+                                Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                    }else{
+                        Toast.makeText(this, "Please check the quantity or the message.", Toast.LENGTH_SHORT).show()
+                    }
+
+
                 }
 
                 val decline = dialogBinding.findViewById<Button>(R.id.btnDecline)

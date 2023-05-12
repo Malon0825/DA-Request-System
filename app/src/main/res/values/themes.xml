@@ -23,6 +23,14 @@
 
     </style>
 
+    <style name="ThemeOverlay.SearchView" parent="">
+        <item name="android:editTextColor">@color/black</item>
+        <item name="android:textColorHint">@color/gray</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:hint">Type here...</item>
+        <item name="android:iconifiedByDefault">false</item>
+    </style>
+
     <style name="ThemeOverlay.Spinner" parent="">
         <item name="android:textColor">@color/black</item>
         <item name="backgroundColor">@color/white</item>

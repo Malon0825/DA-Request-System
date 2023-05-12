@@ -14,4 +14,16 @@
         <!-- Customize your theme here. -->
         <item name="android:windowFullscreen">true</item>
     </style>
+
+    <style name="ThemeOverlay.ListView" parent="">
+        <item name="android:editTextColor">@color/black</item>
+        <item name="android:textColorHint">@color/gray</item>
+        <item name="android:textColor">@color/black</item>
+
+    </style>
+
+    <style name="ThemeOverlay.Spinner" parent="">
+        <item name="android:textColor">@color/black</item>
+        <item name="backgroundColor">@color/white</item>
+    </style>
 </resources>
