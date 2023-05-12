@@ -11,6 +11,7 @@ import android.widget.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.time.LocalDate
 
 class AdminHomeScreen : AppCompatActivity() {
 
@@ -25,7 +26,9 @@ class AdminHomeScreen : AppCompatActivity() {
         val clientReq: MutableList<String> = mutableListOf()
         val userReqOrderId: MutableList<String> = mutableListOf()
         val userReqDetails: MutableList<String> = mutableListOf()
+        val userReqDate: MutableList<String> = mutableListOf()
         var isGrantAccess: Boolean? = null
+
 
 
         val adapter: ArrayAdapter<String> = ArrayAdapter(
@@ -33,11 +36,19 @@ class AdminHomeScreen : AppCompatActivity() {
             R.layout.custom_list_layout
         )
 
+        val adapter2: ArrayAdapter<String> = ArrayAdapter(
+            this,
+            R.layout.custom_list_layout
+        )
+
+        val textNotif = findViewById<TextView>(R.id.textNotification)
+
         val db = Firebase.firestore
         db.collection("request")
             .whereEqualTo("access", false)
             .get()
             .addOnCompleteListener { task ->
+                textNotif.setText("")
                 if (task.isSuccessful) {
                     for (document in task.result!!) {
                         val docID = document.id
@@ -52,8 +63,9 @@ class AdminHomeScreen : AppCompatActivity() {
                         val date = data.date
 
                         adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
-
-
+                    }
+                    if (task.result!!.isEmpty) {
+                        textNotif.setText("Request Access is Empty!!")
                     }
                 } else {
                     Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
@@ -94,6 +106,8 @@ class AdminHomeScreen : AppCompatActivity() {
                     val displayReqId = clientReq[reqID.toInt()]
                     val detailVal = userReqDetails[reqID.toInt()]
 
+                    val req_date = userReqDate[reqID.toInt()]
+
                     val txtQuantity = dialogBinding.findViewById<EditText>(R.id.txtStocks)
                     val quantity = txtQuantity.text.toString()
 
@@ -102,11 +116,20 @@ class AdminHomeScreen : AppCompatActivity() {
 
                     val granted = true
 
-                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted)
+                    val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted, req_date)
 
                     db.collection("feedbacks")
                         .add(feedbackData)
                         .addOnSuccessListener { documentReference ->
+                            db.collection("request_history")
+                                .add(feedbackData)
+                                .addOnSuccessListener { documentReference ->
+                                    // Feedback data added to request_history collection
+                                }
+                                .addOnFailureListener { e ->
+                                    // There was an error adding the data to request_history collection
+                                    Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
 
                             db.collection("client_request")
                                 .document(displayReqId)
@@ -120,9 +143,15 @@ class AdminHomeScreen : AppCompatActivity() {
                                         .addOnCompleteListener { task ->
                                             adapter.clear()
                                             if (task.isSuccessful) {
+                                                textNotif.setText("")
+                                                clientReq.clear()
+                                                userReqOrderId.clear()
+                                                userReqDetails.clear()
+                                                userReqDate.clear()
+
                                                 for (document in task.result!!) {
                                                     val docID = document.id
-                                                    docIDs.add(docID)
+                                                    clientReq.add(docID)
 
                                                     val data = document.toObject(ProductRequestedModel::class.java)
 
@@ -134,15 +163,26 @@ class AdminHomeScreen : AppCompatActivity() {
 
                                                     val cDetail = data.client_deteail
                                                     val cAddress = data.client_address
+
                                                     val cDate = data.client_date
+                                                    userReqDate.add(cDate.toString())
+
                                                     val cReqDetail = data.request_deteail
                                                     val cReqArea = data.request_area
 
                                                     adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
+
+                                                }
+                                                if (task.result!!.isEmpty) {
+                                                    textNotif.setText("Fertilizer Request is Empty!!")
                                                 }
                                                 adapter.notifyDataSetChanged()
                                             } else {
-                                                Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
+                                                Toast.makeText(
+                                                    this,
+                                                    "Error getting documents: ${task.exception}",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
                                             }
                                         }
                                     myDialog.dismiss()
@@ -153,7 +193,7 @@ class AdminHomeScreen : AppCompatActivity() {
                                 }
                         }
                         .addOnFailureListener { e ->
-                            // There was an error adding the data
+                            // There was an error adding the data to feedbacks collection
                             Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                 }
@@ -187,11 +227,16 @@ class AdminHomeScreen : AppCompatActivity() {
                                     db.collection("client_request")
                                         .get()
                                         .addOnCompleteListener { task ->
-                                            adapter.clear()
+                                            textNotif.setText("")
                                             if (task.isSuccessful) {
+                                                adapter.clear()
+                                                clientReq.clear()
+                                                userReqOrderId.clear()
+                                                userReqDetails.clear()
+                                                userReqDate.clear()
                                                 for (document in task.result!!) {
                                                     val docID = document.id
-                                                    docIDs.add(docID)
+                                                    clientReq.add(docID)
 
                                                     val data = document.toObject(ProductRequestedModel::class.java)
 
@@ -203,12 +248,19 @@ class AdminHomeScreen : AppCompatActivity() {
 
                                                     val cDetail = data.client_deteail
                                                     val cAddress = data.client_address
+
                                                     val cDate = data.client_date
+                                                    userReqDate.add(cDate.toString())
+
                                                     val cReqDetail = data.request_deteail
                                                     val cReqArea = data.request_area
 
                                                     adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
                                                 }
+                                                if (task.result!!.isEmpty) {
+                                                    textNotif.setText("Fertilizer Request is Empty!!")
+                                                }
+                                                adapter.notifyDataSetChanged()
                                             } else {
                                                 Toast.makeText(
                                                     this,
@@ -216,7 +268,6 @@ class AdminHomeScreen : AppCompatActivity() {
                                                     Toast.LENGTH_LONG
                                                 ).show()
                                             }
-                                            adapter.notifyDataSetChanged()
                                         }
                                     myDialog.dismiss()
                                 }
@@ -270,8 +321,10 @@ class AdminHomeScreen : AppCompatActivity() {
                                                     .whereEqualTo("access", false)
                                                     .get()
                                                     .addOnCompleteListener { task ->
+                                                        textNotif.setText("")
                                                         if (task.isSuccessful) {
-                                                            adapter.clear() // clear the adapter before adding new data
+                                                            adapter.clear()
+                                                            docIDs.clear()
                                                             for (document in task.result!!) {
                                                                 val docID = document.id
                                                                 docIDs.add(docID)
@@ -286,7 +339,10 @@ class AdminHomeScreen : AppCompatActivity() {
 
                                                                 adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
                                                             }
-                                                            adapter.notifyDataSetChanged() // notify the adapter that the data has changed
+                                                            if (task.result!!.isEmpty) {
+                                                                textNotif.setText("Request Access is Empty!!")
+                                                            }
+                                                            adapter.notifyDataSetChanged()
                                                         } else {
                                                             Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
                                                         }
@@ -330,8 +386,10 @@ class AdminHomeScreen : AppCompatActivity() {
                                                     .whereEqualTo("access", false)
                                                     .get()
                                                     .addOnCompleteListener { task ->
+                                                        textNotif.setText("")
                                                         if (task.isSuccessful) {
-                                                            adapter.clear() // clear the adapter before adding new data
+                                                            adapter.clear()
+                                                            docIDs.clear()
                                                             for (document in task.result!!) {
                                                                 val docID = document.id
                                                                 docIDs.add(docID)
@@ -346,7 +404,10 @@ class AdminHomeScreen : AppCompatActivity() {
 
                                                                 adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
                                                             }
-                                                            adapter.notifyDataSetChanged() // notify the adapter that the data has changed
+                                                            if (task.result!!.isEmpty) {
+                                                                textNotif.setText("Request Access is Empty!!")
+                                                            }
+                                                            adapter.notifyDataSetChanged()
                                                         } else {
                                                             Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
                                                         }
@@ -365,8 +426,109 @@ class AdminHomeScreen : AppCompatActivity() {
 
         val logout = findViewById<ImageButton>(R.id.btnLogout)
         logout.setOnClickListener {
-            FirebaseAuth.getInstance().signOut()
-            finish()
+
+            val dialogBinding = layoutInflater.inflate(R.layout.logout_confirm, null)
+
+            val myDialog = Dialog(this)
+            myDialog.setContentView(dialogBinding)
+
+            val window = myDialog.window
+            window?.setGravity(Gravity.CENTER)
+            window?.setDimAmount(0.5F) // Set dim amount to 0 for full transparency
+
+
+            myDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            myDialog.setCanceledOnTouchOutside(true)
+            myDialog.show()
+
+            val message = dialogBinding.findViewById<TextView>(R.id.txtFeedBack)
+            message.setText("Are you sure you want to logout?")
+
+            val logout_yes = dialogBinding.findViewById<Button>(R.id.btnLogYes)
+            logout_yes.setOnClickListener {
+                FirebaseAuth.getInstance().signOut()
+                finish()
+            }
+
+
+        }
+
+        val history = findViewById<ImageButton>(R.id.btnHistory)
+        history.setOnClickListener {
+
+            val dialogBinding = layoutInflater.inflate(R.layout.message_screen, null)
+
+            val myDialog = Dialog(this)
+            myDialog.setContentView(dialogBinding)
+
+            val window = myDialog.window
+            window?.setGravity(Gravity.CENTER)
+            window?.setDimAmount(0.5F) // Set dim amount to 0 for full transparency
+
+
+            myDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            myDialog.setCanceledOnTouchOutside(true)
+            myDialog.show()
+
+            val listNotif = dialogBinding.findViewById<ListView>(R.id.lvMessage)
+
+            db.collection("request_history")
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        adapter2.clear()
+                        for (document in task.result!!) {
+                            val data = document.toObject(FeedbackModel::class.java)
+
+                            val cid = data.client_id
+                            val detail_req = data.detail_req
+                            val quantity = data.quantity
+                            val message = data.message
+                            val date = data.date
+                            val is_granted = data.granted
+
+
+                            var granted: String? = null
+
+                            if (is_granted == true){
+                                granted = "Yes"
+                            }else if (is_granted == false) {
+                                granted = "No"
+                            }
+
+                            db.collection("users")
+                                .document(cid.toString())
+                                .get()
+                                .addOnSuccessListener { document ->
+                                    if (document.exists()) {
+                                        val datas = document.toObject(UserModel::class.java)
+
+                                        val fname = datas?.first_name
+                                        val mname = datas?.middle_name
+                                        val lname = datas?.last_name
+                                        val email = datas?.email
+                                        val address = datas?.address
+
+                                        adapter2.add("Name: $fname $mname $lname \nEmail: $email \nAddress: $address \n\nFertilizer requested: \n$detail_req " +
+                                                "\n\nQuantity granted: $quantity \nMessage: $message \nGranted: $granted \nDate: $date")
+                                    }
+                                }
+                                .addOnFailureListener { exception ->
+                                    // There was an error getting the document
+                                    Toast.makeText(this, "Error getting document: ${exception.message}", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                        adapter2.notifyDataSetChanged()
+                    }else{
+                        Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
+                    }
+                }
+
+
+            listNotif.adapter = adapter2
+
+
+
         }
 
         val products = findViewById<TextView>(R.id.button)
@@ -374,6 +536,7 @@ class AdminHomeScreen : AppCompatActivity() {
             val intent = Intent(this, AdminProduct::class.java)
             startActivity(intent)
         }
+
         val grantFertilizer = findViewById<ImageButton>(R.id.btnFertilizer)
         grantFertilizer.setOnClickListener {
             adapter.clear()
@@ -383,6 +546,11 @@ class AdminHomeScreen : AppCompatActivity() {
                 .get()
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
+                        textNotif.setText("")
+                        clientReq.clear()
+                        userReqOrderId.clear()
+                        userReqDetails.clear()
+                        userReqDate.clear()
                         for (document in task.result!!) {
                             val docID = document.id
                             clientReq.add(docID)
@@ -395,15 +563,21 @@ class AdminHomeScreen : AppCompatActivity() {
                             val reqDetail = data.request_deteail
                             userReqDetails.add(reqDetail.toString())
 
+
+
                             val cDetail = data.client_deteail
                             val cAddress = data.client_address
+
                             val cDate = data.client_date
+                            userReqDate.add(cDate.toString())
+
                             val cReqDetail = data.request_deteail
                             val cReqArea = data.request_area
 
                             adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
-
-
+                        }
+                        if (task.result!!.isEmpty) {
+                            textNotif.setText("Fertilizer Request is Empty!!")
                         }
                         adapter.notifyDataSetChanged()
                     } else {
@@ -425,7 +599,10 @@ class AdminHomeScreen : AppCompatActivity() {
                 .whereEqualTo("access", false)
                 .get()
                 .addOnCompleteListener { task ->
+                    textNotif.setText("")
                     if (task.isSuccessful) {
+                        adapter.clear()
+                        docIDs.clear()
                         for (document in task.result!!) {
                             val docID = document.id
                             docIDs.add(docID)
@@ -439,16 +616,13 @@ class AdminHomeScreen : AppCompatActivity() {
                             val date = data.date
 
                             adapter.add("Request access from $fname $mname $lname.\nAddress: $address.\nDate: $date")
-
-
+                        }
+                        if (task.result!!.isEmpty) {
+                            textNotif.setText("Request Access is Empty!!")
                         }
                         adapter.notifyDataSetChanged()
                     } else {
-                        Toast.makeText(
-                            this,
-                            "Error getting documents: ${task.exception}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(this, "Error getting documents: ${task.exception}", Toast.LENGTH_LONG).show()
                     }
                 }
         }

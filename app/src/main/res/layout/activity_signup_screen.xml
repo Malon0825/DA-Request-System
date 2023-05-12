@@ -181,28 +181,32 @@
 
     <EditText
         android:id="@+id/textPassword"
-        android:layout_width="wrap_content"
+        android:layout_width="181dp"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textPassword"
         android:theme="@style/ThemeOverlay.ListView"
         app:layout_constraintBottom_toBottomOf="@+id/imageView94"
         app:layout_constraintEnd_toEndOf="@+id/imageView94"
+        app:layout_constraintHorizontal_bias="0.388"
         app:layout_constraintStart_toStartOf="@+id/imageView94"
-        app:layout_constraintTop_toTopOf="@+id/imageView94" />
+        app:layout_constraintTop_toTopOf="@+id/imageView94"
+        app:layout_constraintVertical_bias="0.476" />
+
 
     <EditText
         android:id="@+id/txtConfPassword"
-        android:layout_width="wrap_content"
+        android:layout_width="181dp"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textPassword"
         android:theme="@style/ThemeOverlay.ListView"
         app:layout_constraintBottom_toBottomOf="@+id/imageView11"
         app:layout_constraintEnd_toEndOf="@+id/imageView11"
+        app:layout_constraintHorizontal_bias="0.408"
         app:layout_constraintStart_toStartOf="@+id/imageView11"
-        app:layout_constraintTop_toBottomOf="@+id/imageView94" />
-
+        app:layout_constraintTop_toBottomOf="@+id/imageView94"
+        app:layout_constraintVertical_bias="0.416" />
 
     <ImageButton
         android:id="@+id/btn_signup"
@@ -226,6 +230,30 @@
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/imageView84"
         app:layout_constraintTop_toTopOf="@+id/btn_signup"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <ImageButton
+        android:id="@+id/btnVisibility"
+        android:layout_width="41dp"
+        android:layout_height="42dp"
+        android:background="@drawable/hide"
+        app:layout_constraintBottom_toBottomOf="@+id/textPassword"
+        app:layout_constraintEnd_toEndOf="@+id/imageView94"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/textPassword"
+        app:layout_constraintTop_toTopOf="@+id/textPassword"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <ImageButton
+        android:id="@+id/btnConfVisibility"
+        android:layout_width="41dp"
+        android:layout_height="42dp"
+        android:background="@drawable/hide"
+        app:layout_constraintBottom_toBottomOf="@+id/txtConfPassword"
+        app:layout_constraintEnd_toEndOf="@+id/imageView11"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/txtConfPassword"
+        app:layout_constraintTop_toTopOf="@+id/txtConfPassword"
         app:layout_constraintVertical_bias="0.0" />
 
 

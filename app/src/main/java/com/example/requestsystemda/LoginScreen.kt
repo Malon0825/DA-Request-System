@@ -3,6 +3,8 @@ package com.example.requestsystemda
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import com.example.requestsystemda.databinding.ActivityLoginScreenBinding
@@ -26,6 +28,24 @@ class LoginScreen : AppCompatActivity() {
             startActivity(intent)
         }
 
+        val showPasswordButton = findViewById<ImageButton>(R.id.btnVisibility)
+        val passwordv = findViewById<EditText>(R.id.textPassword)
+        var isPasswordVisible = false
+
+        showPasswordButton.setOnClickListener {
+            isPasswordVisible = !isPasswordVisible
+
+            if (isPasswordVisible) {
+                // Show password
+                passwordv.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                showPasswordButton.setBackgroundResource(R.drawable.show)
+            } else {
+                // Hide password
+                passwordv.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                showPasswordButton.setBackgroundResource(R.drawable.hide)
+            }
+        }
+
         binding.btnLogin.setOnClickListener {
             val email = binding.txtEmail.text.toString()
             val password = binding.textPassword.text.toString()
@@ -39,7 +59,7 @@ class LoginScreen : AppCompatActivity() {
                             binding.txtEmail.setText("")
                             binding.textPassword.setText("")
                         } else {
-                            Toast.makeText(this, it.exception.toString(), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Please check your username and password.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } else {
@@ -50,7 +70,7 @@ class LoginScreen : AppCompatActivity() {
                             binding.txtEmail.setText("")
                             binding.textPassword.setText("")
                         } else {
-                            Toast.makeText(this, it.exception.toString(), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Please check your username and password.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

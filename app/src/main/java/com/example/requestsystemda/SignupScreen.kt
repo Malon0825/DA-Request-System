@@ -3,7 +3,10 @@ package com.example.requestsystemda
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
+import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.Toast
 import com.example.requestsystemda.databinding.ActivitySignupScreenBinding
 import com.google.firebase.auth.FirebaseAuth
@@ -36,6 +39,43 @@ class SignupScreen : AppCompatActivity() {
             startActivity(intent)
 
         }
+
+        val showPasswordButton = findViewById<ImageButton>(R.id.btnVisibility)
+        val passwordv = findViewById<EditText>(R.id.textPassword)
+        var isPasswordVisible = false
+
+        showPasswordButton.setOnClickListener {
+            isPasswordVisible = !isPasswordVisible
+
+            if (isPasswordVisible) {
+                // Show password
+                passwordv.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                showPasswordButton.setBackgroundResource(R.drawable.show)
+            } else {
+                // Hide password
+                passwordv.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                showPasswordButton.setBackgroundResource(R.drawable.hide)
+            }
+        }
+
+        val showConfPasswordButton = findViewById<ImageButton>(R.id.btnConfVisibility)
+        val confPasswordv = findViewById<EditText>(R.id.txtConfPassword)
+        var isConfPasswordVisible = false
+
+        showConfPasswordButton.setOnClickListener {
+            isConfPasswordVisible = !isConfPasswordVisible
+
+            if (isConfPasswordVisible) {
+                // Show password
+                confPasswordv.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                showConfPasswordButton.setBackgroundResource(R.drawable.show)
+            } else {
+                // Hide password
+                confPasswordv.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                showConfPasswordButton.setBackgroundResource(R.drawable.hide)
+            }
+        }
+
         binding.btnSignup.setOnClickListener {
 
             binding.btnSignup.isEnabled = false

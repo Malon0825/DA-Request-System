@@ -18,6 +18,7 @@ import androidx.core.view.get
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.time.LocalDate
 
 class OrderScreen : AppCompatActivity() {
 
@@ -36,6 +37,9 @@ class OrderScreen : AppCompatActivity() {
         val user = FirebaseAuth.getInstance().currentUser
         val uid = user?.uid.toString()
 
+        val currentDate = LocalDate.now()
+        val months = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
         val products: MutableList<String> = mutableListOf()
         val docIDs: MutableList<String> = mutableListOf()
         val stocks_id: MutableList<String> = mutableListOf()
@@ -50,6 +54,9 @@ class OrderScreen : AppCompatActivity() {
             .get()
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    products.clear()
+                    stocks_id.clear()
+                    docIDs.clear()
                     for (document in task.result!!) {
 
                         val docID = document.id
@@ -77,7 +84,7 @@ class OrderScreen : AppCompatActivity() {
 
         searchView.setOnQueryTextListener(object :androidx.appcompat.widget.SearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
-                searchView.clearFocus()
+
                 if (products.contains(query)){
                     adapter.filter.filter(query)
                 }else{
@@ -143,13 +150,21 @@ class OrderScreen : AppCompatActivity() {
 
                         // Retrieve the latest data and perform necessary operations
                         if (doc != null) {
+
+                            val year = currentDate.year
+                            val month = currentDate.monthValue
+                            val day = currentDate.dayOfMonth
+
+                            val currentMonthName = months[month - 1]
+
+                            val date = "$currentMonthName/$day/$year"
+
                             val fname = doc.first_name
                             val mname = doc.middle_name
                             val lname = doc.last_name
 
                             val clientName = "$fname $mname $lname"
                             val address = doc.address
-                            val date = doc.date
 
                             val clientReqDetails = ProductRequestedModel(uid, clientName, address, date, displayValue.toString(), request_area)
                             // Return the necessary data to be used after the transaction completes
