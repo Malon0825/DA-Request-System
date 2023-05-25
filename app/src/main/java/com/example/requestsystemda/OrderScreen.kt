@@ -166,7 +166,7 @@ class OrderScreen : AppCompatActivity() {
                             val clientName = "$fname $mname $lname"
                             val address = doc.address
 
-                            val clientReqDetails = ProductRequestedModel(uid, clientName, address, date, displayValue.toString(), request_area)
+                            val clientReqDetails = ProductRequestedModel(uid, clientName, address, date, displayValue.toString(), request_area, id)
                             // Return the necessary data to be used after the transaction completes
                             clientReqDetails
                         } else {

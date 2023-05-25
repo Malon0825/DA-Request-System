@@ -27,6 +27,7 @@ class AdminHomeScreen : AppCompatActivity() {
         val userReqOrderId: MutableList<String> = mutableListOf()
         val userReqDetails: MutableList<String> = mutableListOf()
         val userReqDate: MutableList<String> = mutableListOf()
+        val userReqProductId: MutableList<String> = mutableListOf()
         var isGrantAccess: Boolean? = null
 
 
@@ -105,6 +106,7 @@ class AdminHomeScreen : AppCompatActivity() {
                     val clientId = userReqOrderId[reqID.toInt()]
                     val displayReqId = clientReq[reqID.toInt()]
                     val detailVal = userReqDetails[reqID.toInt()]
+                    val userProductId = userReqProductId[reqID.toInt()]
 
                     val req_date = userReqDate[reqID.toInt()]
 
@@ -119,80 +121,115 @@ class AdminHomeScreen : AppCompatActivity() {
                     if (quantity.isNotEmpty() && message.isNotEmpty()) {
                         val feedbackData = FeedbackModel(clientId, detailVal, quantity, message, granted, req_date)
 
-                        db.collection("feedbacks")
-                            .add(feedbackData)
-                            .addOnSuccessListener { documentReference ->
-                                db.collection("request_history")
-                                    .add(feedbackData)
-                                    .addOnSuccessListener { documentReference ->
-                                        // Feedback data added to request_history collection
-                                    }
-                                    .addOnFailureListener { e ->
-                                        // There was an error adding the data to request_history collection
-                                        Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
+                        db.collection("products")
+                            .document(userProductId)
+                            .get()
+                            .addOnSuccessListener { document ->
+                                // Save the data to the variable
+                                val data = document.toObject(ProductModel::class.java)
 
-                                db.collection("client_request")
-                                    .document(displayReqId)
-                                    .delete()
-                                    .addOnSuccessListener {
-                                        Toast.makeText(this, "Feedback sent..!", Toast.LENGTH_LONG).show()
+                                val currentStock = data?.stocks
+                                val intCurrentStock = currentStock?.toInt() ?: 0
 
-                                        // Refresh adapter and dismiss dialog here
-                                        db.collection("client_request")
-                                            .get()
-                                            .addOnCompleteListener { task ->
-                                                adapter.clear()
-                                                if (task.isSuccessful) {
-                                                    textNotif.setText("")
-                                                    clientReq.clear()
-                                                    userReqOrderId.clear()
-                                                    userReqDetails.clear()
-                                                    userReqDate.clear()
+                                if (intCurrentStock >= quantity.toInt()) {
+                                    val newStock = intCurrentStock - quantity.toInt()
 
-                                                    for (document in task.result!!) {
-                                                        val docID = document.id
-                                                        clientReq.add(docID)
+                                    // Update the stock in the database
+                                    db.collection("products")
+                                        .document(userProductId)
+                                        .update(mapOf("stocks" to newStock))
+                                        .addOnSuccessListener {
 
-                                                        val data = document.toObject(ProductRequestedModel::class.java)
+                                            db.collection("feedbacks")
+                                                .add(feedbackData)
+                                                .addOnSuccessListener { documentReference ->
+                                                    db.collection("request_history")
+                                                        .add(feedbackData)
+                                                        .addOnSuccessListener { documentReference ->
+                                                            // Feedback data added to request_history collection
+                                                        }
+                                                        .addOnFailureListener { e ->
+                                                            // There was an error adding the data to request_history collection
+                                                            Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
+                                                        }
 
-                                                        val reqOrderId = data.client_id
-                                                        userReqOrderId.add(reqOrderId.toString())
+                                                    db.collection("client_request")
+                                                        .document(displayReqId)
+                                                        .delete()
+                                                        .addOnSuccessListener {
+                                                            Toast.makeText(this, "Feedback sent..!", Toast.LENGTH_LONG).show()
 
-                                                        val reqDetail = data.request_deteail
-                                                        userReqDetails.add(reqDetail.toString())
+                                                            // Refresh adapter and dismiss dialog here
+                                                            db.collection("client_request")
+                                                                .get()
+                                                                .addOnCompleteListener { task ->
+                                                                    adapter.clear()
+                                                                    if (task.isSuccessful) {
+                                                                        textNotif.setText("")
+                                                                        clientReq.clear()
+                                                                        userReqOrderId.clear()
+                                                                        userReqDetails.clear()
+                                                                        userReqDate.clear()
+                                                                        userReqProductId.clear()
 
-                                                        val cDetail = data.client_deteail
-                                                        val cAddress = data.client_address
+                                                                        for (document in task.result!!) {
+                                                                            val docID = document.id
+                                                                            clientReq.add(docID)
 
-                                                        val cDate = data.client_date
-                                                        userReqDate.add(cDate.toString())
+                                                                            val data = document.toObject(ProductRequestedModel::class.java)
 
-                                                        val cReqDetail = data.request_deteail
-                                                        val cReqArea = data.request_area
+                                                                            val reqOrderId = data.client_id
+                                                                            userReqOrderId.add(reqOrderId.toString())
 
-                                                        adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
+                                                                            val reqDetail = data.request_deteail
+                                                                            userReqDetails.add(reqDetail.toString())
 
-                                                    }
-                                                    if (task.result!!.isEmpty) {
-                                                        textNotif.setText("Fertilizer Request is Empty!!")
-                                                    }
-                                                    adapter.notifyDataSetChanged()
-                                                } else {
-                                                    Toast.makeText(
-                                                        this,
-                                                        "Error getting documents: ${task.exception}",
-                                                        Toast.LENGTH_LONG
-                                                    ).show()
+                                                                            val cDetail = data.client_deteail
+                                                                            val cAddress = data.client_address
+
+                                                                            val cDate = data.client_date
+                                                                            userReqDate.add(cDate.toString())
+
+                                                                            val cReqDetail = data.request_deteail
+                                                                            val cReqArea = data.request_area
+
+                                                                            val userProductId = data.product_id
+                                                                            userReqProductId.add(userProductId.toString())
+
+                                                                            adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
+
+                                                                        }
+                                                                        if (task.result!!.isEmpty) {
+                                                                            textNotif.setText("Fertilizer Request is Empty!!")
+                                                                        }
+                                                                        adapter.notifyDataSetChanged()
+                                                                    } else {
+                                                                        Toast.makeText(
+                                                                            this,
+                                                                            "Error getting documents: ${task.exception}",
+                                                                            Toast.LENGTH_LONG
+                                                                        ).show()
+                                                                    }
+                                                                }
+                                                            myDialog.dismiss()
+                                                        }
+                                                        .addOnFailureListener { e ->
+                                                            // There was an error adding the data
+                                                            Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
+                                                        }
                                                 }
-                                            }
-                                        myDialog.dismiss()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        // There was an error adding the data
-                                        Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
+                                        }
+                                        .addOnFailureListener {
+                                            // Failure!
+                                        }
+                                } else {
+                                    Toast.makeText(this, "Not enough stocks left!!", Toast.LENGTH_SHORT).show()
+                                }
+
+
                             }
+
+
                             .addOnFailureListener { e ->
                                 // There was an error adding the data to feedbacks collection
                                 Toast.makeText(this, "Error ${e.message}", Toast.LENGTH_SHORT).show()
@@ -557,6 +594,8 @@ class AdminHomeScreen : AppCompatActivity() {
                         userReqOrderId.clear()
                         userReqDetails.clear()
                         userReqDate.clear()
+                        userReqProductId.clear()
+
                         for (document in task.result!!) {
                             val docID = document.id
                             clientReq.add(docID)
@@ -579,6 +618,10 @@ class AdminHomeScreen : AppCompatActivity() {
 
                             val cReqDetail = data.request_deteail
                             val cReqArea = data.request_area
+
+
+                            val userProductId = data.product_id
+                            userReqProductId.add(userProductId.toString())
 
                             adapter.add("From: $cDetail \n\nAddress: $cAddress \n\nDate: $cDate \n\n$cReqDetail \n\nArea is: $cReqArea hectare")
                         }
